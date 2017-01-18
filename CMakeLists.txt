@@ -185,6 +185,19 @@ set( EXTERNAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external )
 #CDAudioPlayer begin
 #
 
+#External dependencies not included in this repository
+set( FMOD_LOWLEVEL_PATH CACHE PATH "Path to FMOD Studio Low Level API root directory. This is the directory that includes the inc and lib directories" )
+
+if( FMOD_LOWLEVEL_PATH STREQUAL "" )
+	MESSAGE( FATAL_ERROR "FMOD Studio Low Level API is required to use this program" )
+endif()
+
+if( MSVC )
+	find_library( FMOD_LOWLEVEL_ARCHIVE fmod_vc${CMAKE_STATIC_LIBRARY_SUFFIX} PATHS "${FMOD_LOWLEVEL_PATH}/lib" NO_DEFAULT_PATH )
+else()
+	find_library( FMOD_LOWLEVEL_ARCHIVE fmod${CMAKE_STATIC_LIBRARY_SUFFIX} PATHS "${FMOD_LOWLEVEL_PATH}/lib" NO_DEFAULT_PATH )
+endif()
+
 add_subdirectory( src )
 
 preprocess_sources()
@@ -193,6 +206,7 @@ add_executable( CDAudioPlayer ${PREP_SRCS} )
 
 target_include_directories( CDAudioPlayer PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${FMOD_LOWLEVEL_PATH}/inc
 )
 
 target_compile_definitions( CDAudioPlayer PRIVATE
@@ -200,12 +214,19 @@ target_compile_definitions( CDAudioPlayer PRIVATE
 )
 
 target_link_libraries( CDAudioPlayer
+	${FMOD_LOWLEVEL_ARCHIVE}
 )
 
 #Create filters
 create_source_groups( "${CMAKE_SOURCE_DIR}" )
 
 clear_sources()
+
+#Copy all libs over to the binary dir so we can use them locally.
+#Because there might be an fmod.dll in SysWOW64 we must do this so it uses the local copy.
+foreach( config_type IN LISTS CMAKE_CONFIGURATION_TYPES )
+	file( COPY "${FMOD_LOWLEVEL_PATH}/lib/" DESTINATION ${CMAKE_BINARY_DIR}/${config_type} )
+endforeach()
 
 #
 #CDAudioPlayer end
