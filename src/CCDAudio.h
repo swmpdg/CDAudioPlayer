@@ -98,7 +98,7 @@ private:
 
 	void MP3_StopStream();
 
-	void MP3_Loop();
+	void MP3_Loop( bool OnOff );
 
 	void MP3_SetPause( bool OnOff );
 

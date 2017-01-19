@@ -603,10 +603,10 @@ void CCDAudio::MP3_StopStream()
 	m_bIsPrimed = false;
 }
 
-void CCDAudio::MP3_Loop()
+void CCDAudio::MP3_Loop( bool OnOff )
 {
 	if( m_pStream )
-		m_pStream->setLoopCount( 0 );
+		m_pStream->setLoopCount( OnOff ? -1 : 0 );
 }
 
 void CCDAudio::MP3_SetPause( bool OnOff )
@@ -655,7 +655,7 @@ bool CCDAudio::MP3_InitStream( int trackNum, bool looping )
 
 		m_dFadeOutTime = 0;
 
-		m_pSystem->createSound( pszPath, FMOD_DEFAULT, nullptr, &m_pSample );
+		m_pSystem->createSound( pszPath, FMOD_2D | FMOD_LOOP_NORMAL | FMOD_3D_WORLDRELATIVE | FMOD_3D_INVERSEROLLOFF, nullptr, &m_pSample );
 
 		if( m_pSample )
 		{
@@ -666,10 +666,8 @@ bool CCDAudio::MP3_InitStream( int trackNum, bool looping )
 				m_pStream->setVolume( m_MP3.volume );
 				strcpy( m_MP3.trackname, g_pszMP3trackFileMap[ trackNum ] );
 
-				if( looping )
-				{
-					MP3_Loop();
-				}
+				MP3_Loop( looping );
+
 				Con_DPrintf( "MP3_InitStream(%d, %s) successful\n", trackNum, g_pszMP3trackFileMap[ trackNum ] );
 				return true;
 			}

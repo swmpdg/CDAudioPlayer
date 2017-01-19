@@ -35,7 +35,7 @@ int main( int iArgc, char* pszArgV[] )
 	CDAudio_Init();
 
 	//Play a sound.
-	cdaudio->PlayFile( "media\\Suspense07", false );
+	cdaudio->PlayFile( "media\\Suspense07", true );
 
 	auto start = std::chrono::system_clock::now();
 
@@ -44,7 +44,7 @@ int main( int iArgc, char* pszArgV[] )
 
 	realtime = std::chrono::duration_cast<std::chrono::milliseconds>( start.time_since_epoch() ).count() / 1000.0;
 
-	bool bPlayedAgain = false;
+	unsigned int uiPlayedCount = 0;
 
 	for( auto now = start; now < end; now = std::chrono::system_clock::now() )
 	{
@@ -52,12 +52,19 @@ int main( int iArgc, char* pszArgV[] )
 		realtime = std::chrono::duration_cast<std::chrono::milliseconds>( now.time_since_epoch() ).count() / 1000.0;
 		cdaudio->Frame();
 
-		if( ( now - start ) >= std::chrono::seconds( 10 ) && !bPlayedAgain )
+		if( ( now - start ) >= std::chrono::seconds( 10 ) && uiPlayedCount == 0 )
 		{
-			bPlayedAgain = true;
+			++uiPlayedCount;
 
 			//Start another sound now that the other one has finished.
 			cdaudio->PlayFile( "media\\Suspense03", false );
+		}
+		else if( ( now - start ) >= std::chrono::seconds( 20 ) && uiPlayedCount == 1 )
+		{
+			++uiPlayedCount;
+
+			//Start another sound now that the other one has finished.
+			cdaudio->PlayFile( "media\\Half-Life13", false );
 		}
 	}
 
