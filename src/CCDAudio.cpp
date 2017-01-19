@@ -550,7 +550,8 @@ bool CCDAudio::MP3_Init()
 		return false;
 	}
 
-	result = m_pSystem->init( 32, FMOD_INIT_NORMAL, nullptr );
+	//We only need 1 channel for the MP3.
+	result = m_pSystem->init( 1, FMOD_INIT_NORMAL, nullptr );
 
 	return true;
 }
