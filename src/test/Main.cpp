@@ -1,8 +1,13 @@
+#include <chrono>
 #include <iostream>
 #include <thread>
 
 #include <fmod.hpp>
 #include <fmod_errors.h>
+
+#include "CCDAudio.h"
+#include "Sound.h"
+#include "Stubs.h"
 
 void ERRCHECK_fn( FMOD_RESULT result, const char *file, int line )
 {
@@ -20,99 +25,44 @@ void ERRCHECK_fn( FMOD_RESULT result, const char *file, int line )
 
 int main( int iArgc, char* pszArgV[] )
 {
+	//Simple test for the CD Audio system.
+
 	std::cout << "CD Audio player" << std::endl << "FMOD Studio, copyright © Firelight Technologies Pty, Ltd., 2012-2016." << std::endl;
 
-	FMOD::System     *system;
-	FMOD::Sound      *sound1;
-	FMOD::Channel    *channel = 0;
-	FMOD_RESULT       result;
-	unsigned int      version;
-	void             *extradriverdata = 0;
+	//Initialize Sound system. Required so cvars manage memory properly.
+	S_Init();
+	//Initialize CD Audio system.
+	CDAudio_Init();
 
-	/*
-	Create a System object and initialize
-	*/
-	result = FMOD::System_Create( &system );
-	ERRCHECK( result );
+	//Play a sound.
+	cdaudio->PlayFile( "media\\Suspense07", false );
 
-	result = system->getVersion( &version );
-	ERRCHECK( result );
+	auto start = std::chrono::system_clock::now();
 
-	if( version < FMOD_VERSION )
+	//Play for 30 seconds.
+	auto end = start + std::chrono::duration_cast<decltype( start )::duration>( std::chrono::seconds( 30 ) );
+
+	realtime = std::chrono::duration_cast<std::chrono::milliseconds>( start.time_since_epoch() ).count() / 1000.0;
+
+	bool bPlayedAgain = false;
+
+	for( auto now = start; now < end; now = std::chrono::system_clock::now() )
 	{
-		printf( "FMOD lib version %08x doesn't match header version %08x", version, FMOD_VERSION );
-		return 0;
-	}
+		//Update real time so time based operations work properly.
+		realtime = std::chrono::duration_cast<std::chrono::milliseconds>( now.time_since_epoch() ).count() / 1000.0;
+		cdaudio->Frame();
 
-	result = system->init( 32, FMOD_INIT_NORMAL, extradriverdata );
-	ERRCHECK( result );
-
-	const char* pszMedia = "../media/Half-Life13.mp3";
-
-	result = system->createSound( pszMedia, FMOD_CREATESTREAM, nullptr, &sound1 );
-	ERRCHECK( result );
-
-	result = system->playSound( sound1, 0, false, &channel );
-	ERRCHECK( result );
-
-	bool bIsPlaying = false;
-
-	unsigned int uiSeconds;
-
-	result = sound1->getLength( &uiSeconds, FMOD_TIMEUNIT_MS );
-	ERRCHECK( result );
-
-	//Milliseconds to Seconds.
-	uiSeconds /= 1000;
-
-	const unsigned int uiEndSecond = uiSeconds % 60;
-	const unsigned int uiEndMinute = uiSeconds / 60;
-
-	printf( "%2u:%2u/%2u:%2u", 0, 0, uiEndMinute, uiEndSecond );
-
-	/*
-	Main loop
-	*/
-	do
-	{
-		result = system->update();
-		ERRCHECK( result );
-
-		result = channel->isPlaying( &bIsPlaying );
-
-		if( result == FMOD_OK )
+		if( ( now - start ) >= std::chrono::seconds( 10 ) && !bPlayedAgain )
 		{
-			unsigned int uiPos;
+			bPlayedAgain = true;
 
-			result = channel->getPosition( &uiPos, FMOD_TIMEUNIT_MS );
-			ERRCHECK( result );
-
-			uiPos /= 1000;
-
-			const unsigned int uiSecond = uiPos % 60;
-			const unsigned int uiMinute = uiPos / 60;
-
-			printf( "\b\b\b\b\b\b\b\b\b\b\b%02u:%02u/%02u:%02u", uiMinute, uiSecond, uiEndMinute, uiEndSecond );
-
-			std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
-		}
-		//Once the sound has stopped the result code will be invalid handle, if it was reused for another sound it'll be stolen so avoid triggering error handling for those.
-		else if( ( result != FMOD_ERR_INVALID_HANDLE ) && ( result != FMOD_ERR_CHANNEL_STOLEN ) )
-		{
-			ERRCHECK( result );
+			//Start another sound now that the other one has finished.
+			cdaudio->PlayFile( "media\\Suspense03", false );
 		}
 	}
-	while( bIsPlaying );
 
-	/*
-	Shut down
-	*/
-	result = sound1->release();
-	ERRCHECK( result );
-	result = system->close();
-	ERRCHECK( result );
-	result = system->release();
-	ERRCHECK( result );
+	//Shutdown.
+	CDAudio_Shutdown();
 
 	std::cout << std::endl << "Press ENTER to continue..." << std::endl;
 
