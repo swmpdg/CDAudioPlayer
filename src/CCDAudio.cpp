@@ -409,7 +409,7 @@ void CCDAudio::MP3_PlayTrackFinalize( int trackNum, bool looping )
 		m_bWasPlaying = true;
 		if( m_pStream )
 		{
-			m_pStream->setPaused( true );
+			MP3_SetPause( true );
 			m_bWasPlaying = m_bIsPlaying;
 		}
 
@@ -752,7 +752,7 @@ void CCDAudio::_Pause( int, int )
 		{
 			if( m_pStream )
 			{
-				m_pStream->setPaused( true );
+				MP3_SetPause( true );
 				m_bWasPlaying = m_bIsPlaying;
 			}
 		}
@@ -779,7 +779,7 @@ void CCDAudio::_Resume( int, int )
 
 		if( m_pStream )
 		{
-			m_pStream->setPaused( false );
+			MP3_SetPause( false );
 
 			double flDelta = realtime - m_dPauseTime;
 			m_dPauseTime = 0;
@@ -813,24 +813,7 @@ void CCDAudio::_CDUpdate( int, int )
 				flVolume = static_cast<float>( ( m_dFadeOutTime - Sys_FloatTime() ) / MP3FadeTime.value * MP3Volume.value );
 			}
 
-			if( flVolume < 0.0 )
-			{
-				flVolume = 0.0;
-			}
-			else if( flVolume > 1.0 )
-			{
-				flVolume = 1.0;
-			}
-
-			if( flVolume != m_MP3.volume )
-			{
-				m_MP3.volume = flVolume;
-
-				if( m_pStream )
-				{
-					m_pStream->setVolume( flVolume );
-				}
-			}
+			MP3_SetVolume( flVolume );
 
 			if( thread->AddThreadItem( &CCDAudio::_CDUpdate, 0, 0 ) )
 				std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
@@ -924,7 +907,7 @@ void CCDAudio::_SwitchToEngine( int, int )
 				}
 				if( m_pStream )
 				{
-					m_pStream->setPaused( false );
+					MP3_SetPause( false );
 					m_bIsPlaying = true;
 
 					if( !m_MP3.inuse )
@@ -953,7 +936,7 @@ void CCDAudio::_SwitchToLauncher( int, int )
 		{
 			if( m_pStream )
 			{
-				m_pStream->setPaused( true );
+				MP3_SetPause( true );
 				m_bWasPlaying = m_bIsPlaying;
 			}
 		}
